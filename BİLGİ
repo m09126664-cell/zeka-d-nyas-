@@ -1,0 +1,155 @@
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ZekaDünyası</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;background:#080b18;color:white;
+ font-family:Arial,sans-serif;
+ background-image:radial-gradient(ellipse at top,#27205b,transparent 60%);
+}
+header{text-align:center;padding:55px 15px 30px}
+h1{font-size:clamp(38px,7vw,70px);margin:10px}
+.neon{background:linear-gradient(90deg,#42f5e9,#a78bfa,#ff68c8);
+ -webkit-background-clip:text;color:transparent}
+header p{color:#b4bdd8;line-height:1.7}
+button,input{font:inherit}
+input{width:min(600px,100%);padding:15px;border-radius:12px;
+ border:1px solid #424b78;background:#11172a;color:white;margin:20px 0}
+main{max-width:1100px;margin:auto;padding:15px}
+#categories{display:flex;gap:9px;flex-wrap:wrap;margin:15px 0 25px}
+button{cursor:pointer;border:1px solid #45466f;background:#15172d;
+ color:white;border-radius:12px;padding:11px 14px}
+button:hover{border-color:#42f5e9;color:#42f5e9;transform:translateY(-2px)}
+#grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:15px}
+.card{padding:22px;border-radius:18px;border:1px solid #343956;
+ background:linear-gradient(140deg,#171e38,#101326);
+ animation:appear .4s ease both;transition:.2s}
+.card:hover{transform:translateY(-5px);border-color:#42f5e9}
+.icon{font-size:35px}
+.card p{color:#aab5d4;line-height:1.6;font-size:14px}
+.card button{width:100%;margin-top:10px}
+#progress{height:8px;background:#242943;border-radius:10px;overflow:hidden}
+#bar{height:100%;width:0;background:linear-gradient(90deg,#42f5e9,#a78bfa);transition:.3s}
+#status{color:#42f5e9;font-size:13px}
+#lesson{display:none;position:fixed;inset:0;background:#000c;
+ padding:20px;overflow:auto;z-index:5}
+.dialog{max-width:700px;margin:30px auto;background:#12182c;
+ border:1px solid #7770ba;border-radius:20px;padding:25px}
+.dialog p,.dialog li{color:#c6cde4;line-height:1.8}
+.close{float:right}
+footer{text-align:center;padding:35px;color:#8f9bbd;font-size:13px}
+@keyframes appear{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+<header>
+ <div>✦ ÜCRETSİZ ÖĞRENME EVRENİ</div>
+ <h1>Zeka<span class="neon">Dünyası</span></h1>
+ <p>Merak et. Keşfet. Öğren.<br>
+ Yazılım, bilim, okul, teknoloji ve daha fazlası tek yerde!</p>
+ <button onclick="document.querySelector('main').scrollIntoView({behavior:'smooth'})">
+ Dersleri keşfet ↓
+ </button>
+</header>
+
+<main>
+ <h2>🚀 Öğrenme yolculuğun</h2>
+ <p id="status">0 ders tamamlandı</p>
+ <div id="progress"><div id="bar"></div></div>
+
+ <h2 style="margin-top:35px">📚 Eğitim kütüphanesi</h2>
+ <input id="search" placeholder="Ders veya konu ara..." oninput="render()">
+ <div id="categories"></div>
+ <div id="grid"></div>
+</main>
+
+<div id="lesson">
+ <div class="dialog">
+  <button class="close" onclick="closeLesson()">✕ Kapat</button>
+  <h2 id="lessonTitle"></h2>
+  <p id="lessonDescription"></p>
+  <h3>Adım adım öğren</h3>
+  <ol id="steps"></ol>
+  <div id="example"></div>
+  <button id="finish" onclick="completeLesson()">✓ Dersi tamamladım</button>
+ </div>
+</div>
+
+<footer>✦ ZekaDünyası · Her gün yeni bir şey öğren.</footer>
+
+<script>
+const cats=[
+["💻","Yazılım ve yapay zekâ"],
+["📚","Okul dersleri"],
+["🔬","Bilim ve teknoloji"],
+["🌐","Bilgisayar ve internet"],
+["🎮","Oyun geliştirme"],
+["🎨","Tasarım ve YouTube"],
+["🌍","İngilizce ve diller"],
+["💰","Para yönetimi ve girişimcilik"],
+["🤖","Elektronik ve robotik"],
+["🧭","Günlük yaşam becerileri"]
+];
+
+const lessons=[
+{c:0,t:"İlk web siten",i:"🌐",d:"HTML ile internette açılabilen bir sayfanın temelini oluştur.",s:["Not Defteri'ni aç.","Yeni bir dosyaya aşağıdaki örneği yaz.","Dosyayı index.html adıyla kaydet.","Dosyaya çift tıklayıp tarayıcıda aç."],code:'<h1>Merhaba Dünya!</h1><p>İlk sitem.</p>'},
+{c:0,t:"Kodlama mantığı",i:"🧩",d:"Değişkenlerle bilgisayarda bilgi saklamayı öğren.",s:["Değişkeni etiketli bir kutu gibi düşün.","Aşağıdaki JavaScript kodunu incele.","puan değerinin nasıl değiştiğini hesapla."],code:'let puan = 10;\npuan = puan + 5;\nconsole.log(puan);'},
+{c:0,t:"Yapay zekâ nedir?",i:"🤖",d:"Yapay zekânın günlük hayattaki kullanımını keşfet.",s:["Yapay zekâ örneklerden örüntü öğrenebilir.","Çeviri ve görsel tanıma araçlarını düşün.","Önemli bilgileri güvenilir kaynaklardan doğrula."]},
+{c:1,t:"Daha iyi ders çalışma",i:"📖",d:"Küçük hedeflerle daha verimli bir çalışma planı kur.",s:["Çalışacağın konuyu seç.","Konuyu küçük parçalara ayır.","Notlara bakmadan kendini test et.","Ertesi gün kısa tekrar yap."]},
+{c:1,t:"Matematik: denklem",i:"➗",d:"Denklemin iki tarafına aynı işlemi uygulamayı öğren.",s:["x + 5 = 12 örneğini incele.","İki taraftan da 5 çıkar.","x = 7 sonucunu bul.","7 + 5 = 12 ile kontrol et."],code:"x + 5 = 12\nx = 12 - 5\nx = 7"},
+{c:2,t:"Güneş Sistemi",i:"🪐",d:"Güneş'i ve çevresinde dolanan gezegenleri tanı.",s:["Güneş bir yıldızdır.","Güneş Sistemi'nde sekiz gezegen bulunur.","Gezegenleri Güneş'e yakınlıklarına göre sırala.","Bir şema çizerek öğrendiklerini göster."]},
+{c:2,t:"Fotosentez",i:"🌱",d:"Bitkilerin ışık yardımıyla nasıl besin ürettiğini öğren.",s:["Bitkiler ışık enerjisinden yararlanır.","Su ve karbondioksit kullanılır.","Besin üretilir ve oksijen açığa çıkar.","Süreci bir çizimle anlat."]},
+{c:3,t:"Bilgisayar parçaları",i:"🖥️",d:"İşlemci, RAM ve depolamanın görevlerini öğren.",s:["CPU genel işlemleri yürütür.","RAM geçici çalışma alanıdır.","SSD ve HDD dosyaları saklar.","GPU grafik işlemlerini hızlandırabilir."]},
+{c:3,t:"Dosyaları düzenle",i:"🗂️",d:"Dosyalarını bulmayı kolaylaştıran klasörler oluştur.",s:["Masaüstünde sağ tıkla.","Yeni > Klasör seç.","Klasöre anlaşılır bir ad ver.","Dosyalarını uygun klasörlere taşı."]},
+{c:4,t:"Roblox Studio'ya giriş",i:"🎮",d:"Roblox Studio'nun temel pencerelerini öğren.",s:["Roblox Studio'yu resmi Roblox Creator sayfasından kur.","Yeni bir Baseplate projesi aç.","Explorer nesneleri gösterir.","Properties seçili nesnenin ayarlarını gösterir.","Part ekleyip Play ile dene."]},
+{c:4,t:"Roblox'ta ilk Script",i:"⌨️",d:"Bir Script ekleyip Output penceresinde mesaj göster.",s:["Explorer'da ServerScriptService bölümünü bul.","Yanındaki + işaretine basıp Script ekle.","Aşağıdaki kodu içine yaz.","Play'e bas; gerekirse View menüsünden Output'u aç."],code:'print("Merhaba ZekaDünyası!")'},
+{c:5,t:"YouTube video fikri",i:"📹",d:"Yapabileceğin ve izleyiciye fayda sağlayan bir fikir bul.",s:["Sevdiğin üç konuyu yaz.","Her konu için bir soru oluştur.","Videonun girişini, uygulamasını ve sonucunu planla.","Başlığın içeriği doğru anlattığından emin ol."]},
+{c:5,t:"Kapak görseli tasarla",i:"🖼️",d:"Okunaklı ve dikkat çekici bir video kapağı hazırla.",s:["Videonun ana fikrini seç.","Bir ana görsel belirle.","Kısa ve büyük yazı kullan.","Küçük ekranda okunup okunmadığını kontrol et."]},
+{c:6,t:"İngilizce kendini tanıt",i:"🗣️",d:"Kısa İngilizce cümlelerle kendini anlatmayı dene.",s:["Hello! My name is Alex. cümlesini öğren.","I like science. cümlesini oku.","I am learning English. cümlesini dene.","Cümleleri sesli tekrar et."]},
+{c:6,t:"Kelime öğrenme yöntemi",i:"📚",d:"Yeni kelimeleri örnek cümlelerle ve tekrar ederek öğren.",s:["Birkaç yeni kelime seç.","Anlamlarını yaz.","Her kelimeyle örnek cümle kur.","Ertesi gün kendini tekrar test et."]},
+{c:7,t:"Bütçe hazırlama",i:"💰",d:"Gelir ve harcamaları takip etmeyi öğren.",s:["Harcamalarını kategorilere ayırarak not et.","İhtiyaç ve istekleri ayırt et.","Küçük bir birikim hedefi belirle.","Hafta sonunda planını gözden geçir."]},
+{c:7,t:"Fikirden projeye",i:"🚀",d:"Bir sorunu belirleyip küçük bir çözüm prototipi hazırla.",s:["Çözmek istediğin küçük bir sorun bul.","Sorunu kimin yaşadığını belirle.","Basit bir çözüm tasarla.","Deneyip geri bildirimle geliştir."]},
+{c:8,t:"Robotlar nasıl çalışır?",i:"🦾",d:"Sensör, kontrolcü ve motorun görevlerini öğren.",s:["Sensör çevreden bilgi alır.","Kontrolcü bilgiyi işler.","Motor hareket oluşturur.","Sensör → kontrolcü → motor akışını çiz."]},
+{c:8,t:"Elektronik güvenliği",i:"🔋",d:"Elektronik projelerde güvenli başlangıç yap.",s:["Cihazın enerjisini kesmeden kablolara dokunma.","Pilleri doğru kutuplarla kullan.","Priz elektriğiyle deney yapma.","Düşük voltajlı eğitim setleriyle ve gerektiğinde yetişkin gözetiminde çalış."]},
+{c:9,t:"Gününü planla",i:"🧭",d:"Büyük işleri küçük görevlere bölerek planla.",s:["Yapılacak işleri yaz.","En önemli iki görevi seç.","Her görevi küçük adımlara ayır.","Günün sonunda ilerlemeni gözden geçir."]}
+];
+
+let selected=0,active=null,done=new Set();
+try{done=new Set(JSON.parse(localStorage.getItem("zekadunyasiDone")||"[]"));}catch(e){}
+function init(){
+ const el=document.getElementById("categories");
+ el.innerHTML='<button onclick="choose(-1)">✨ Tümü</button>'+cats.map((c,i)=>`<button onclick="choose(${i})">${c[0]} ${c[1]}</button>`).join("");
+ render();
+}
+function choose(n){selected=n;render()}
+function render(){
+ const q=document.getElementById("search").value.toLocaleLowerCase("tr");
+ const list=lessons.map((l,i)=>({...l,id:i})).filter(l=>(selected===-1||l.c===selected)&&(`${l.t} ${l.d} ${cats[l.c][1]}`).toLocaleLowerCase("tr").includes(q));
+ document.getElementById("grid").innerHTML=list.length?list.map(l=>`<article class="card"><div class="icon">${l.i}</div><h3>${l.t}</h3><p>${l.d}</p><small>${cats[l.c][1]} · ${done.has(l.id)?"✓ Tamamlandı":"Başlangıç"}</small><button onclick="openLesson(${l.id})">Dersi aç →</button></article>`).join(""):"<p>Bu aramayla eşleşen ders yok.</p>";
+ document.getElementById("status").textContent=`${done.size} / ${lessons.length} ders tamamlandı`;
+ document.getElementById("bar").style.width=(done.size/lessons.length*100)+"%";
+}
+function openLesson(id){
+ active=id;const l=lessons[id];
+ document.getElementById("lessonTitle").textContent=l.i+" "+l.t;
+ document.getElementById("lessonDescription").textContent=l.d;
+ document.getElementById("steps").innerHTML=l.s.map(x=>`<li>${x}</li>`).join("");
+ document.getElementById("example").innerHTML=l.code?`<h3>Örnek</h3><pre style="white-space:pre-wrap;background:#080b18;padding:15px;border-radius:10px;color:#42f5e9">${l.code.replace(/&/g,"&amp;").replace(/</g,"&lt;")}</pre>`:"";
+ document.getElementById("finish").textContent=done.has(id)?"✓ Tamamlandı (işareti kaldır)":"✓ Dersi tamamladım";
+ document.getElementById("lesson").style.display="block";
+}
+function closeLesson(){document.getElementById("lesson").style.display="none"}
+function completeLesson(){
+ if(done.has(active))done.delete(active);else done.add(active);
+ try{localStorage.setItem("zekadunyasiDone",JSON.stringify([...done]))}catch(e){}
+ render();openLesson(active);
+}
+init();
+</script>
+</body>
+</html>
